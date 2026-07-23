@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """
-Linux Security & Compliance Auditor
-Performs non-destructive baseline security scans on Linux systems.
-Supports: RHEL/Fedora/CentOS/Debian/Ubuntu families
+==============================================================================
+Script Name   : auditor.py
+Description   : Non-destructive Linux security & compliance audit tool.
+Author        : SudoShea
+Version       : 1.0.0
+License       : MIT
+Compatibility : RHEL / Fedora / CentOS / Debian / Ubuntu
+==============================================================================
 """
 
 import os
