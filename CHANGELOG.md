@@ -2,6 +2,10 @@
 
 All notable changes to the `linux-security-auditor` project will be documented in this file.
 
+## [1.1.1] - 2026-07-24
+### Added
+- Integrated automated CI/CD pipeline using GitHub Actions and `Flake8` for Python quality control.
+
 ## [1.1.0] - 2026-07-23
 ### Added
 - Added `ssh_sentinel.py` for parsing Linux authentication logs (`/var/log/auth.log` / `/var/log/secure`).

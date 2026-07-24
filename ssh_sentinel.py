@@ -4,7 +4,7 @@
 Script Name   : ssh_sentinel.py
 Description   : Parse Linux auth logs for brute-force SSH attacks & anomalies.
 Author        : SudoShea
-Version       : 1.0.0
+Version       : 1.1.1
 License       : MIT
 Compatibility : RHEL / Fedora / CentOS / Debian / Ubuntu
 ==============================================================================
