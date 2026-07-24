@@ -1,5 +1,7 @@
 # Linux Security & Compliance Auditor 🔍
 
+![Python Linting](https://github.com/SudoShea/linux-security-auditor/actions/workflows/lint.yml/badge.svg)
+
 A zero-dependency Python security toolkit that performs non-destructive compliance checks and authentication log parsing on Linux hosts. Generates clean terminal summaries and structured JSON reports.
 
 ---
@@ -8,10 +10,6 @@ A zero-dependency Python security toolkit that performs non-destructive complian
 
 * **`auditor.py` (v1.1.1):** Non-destructive security compliance scanner evaluating system configurations, firewalls, and active sockets.
 * **`ssh_sentinel.py` (v1.1.1):** Active log parser analyzing `/var/log/auth.log` and `/var/log/secure` for SSH brute-force attempts and anomalous targeting.
-
-![Python Linting](https://github.com/SudoShea/linux-security-auditor/actions/workflows/lint.yml/badge.svg)
-
-A zero-dependency Python CLI tool that performs non-destructive security auditing and compliance checks on Linux hosts. Generates terminal summaries and structured JSON reports.
 
 ---
 
@@ -91,6 +89,6 @@ sudo ./ssh_sentinel.py --max-retries 3
    └─ Invalid Users   : admin
 ```
 ---
-=======
+
 ## 📄 License
 Distributed under the MIT License. See `LICENSE` for details.
