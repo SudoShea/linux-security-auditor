@@ -1,92 +1,129 @@
-# Linux Security & Compliance Auditor 🔍
+# Linux Security Auditor 🔍
 
 ![Python Linting](https://github.com/SudoShea/linux-security-auditor/actions/workflows/lint.yml/badge.svg)
 
-A zero-dependency Python security toolkit that performs non-destructive compliance checks and authentication log parsing on Linux hosts. Generates clean terminal summaries and structured JSON reports.
+* **Version:** 2.0.0
+* **Last Updated:** 2026-07-27
+* **Author:** SudoShea
+* **License:** MIT
 
----
-
-## 🛠️ Included Modules
-
-* **`auditor.py` (v1.1.1):** Non-destructive security compliance scanner evaluating system configurations, firewalls, and active sockets.
-* **`ssh_sentinel.py` (v1.1.1):** Active log parser analyzing `/var/log/auth.log` and `/var/log/secure` for SSH brute-force attempts and anomalous targeting.
+A non-destructive, read-only Linux security auditing and compliance suite designed to inspect host OS configurations, evaluate runtime OpenSSH settings, audit rootless Podman containers, parse authentication logs for brute-force attacks, and detect security drift over time.
 
 ---
 
 ## ⚡ Key Features
 
-* **Zero Dependencies:** Built entirely with native Python standard libraries (`subprocess`, `json`, `os`, `re`). No `pip install` required.
-* **Non-Destructive:** Read-only inspection—leaves system state untouched.
-* **Audit Modules (`auditor.py`):**
-  * **SSH Hardening:** Audits `/etc/ssh/sshd_config` for root access, password authentication, and empty passwords.
-  * **Firewall Verification:** Checks active status for both `firewalld` (RHEL family) and `ufw` (Debian family).
-  * **Network Inspection:** Scans active sockets using `ss` for insecure management ports (`21/FTP`, `23/Telnet`, `80/HTTP`).
-  * **Account Audit:** Inspects `/etc/shadow` for accounts with unset passwords.
-* **Real-Time SSH Sentinel (`ssh_sentinel.py`):** Monitors authentication logs in real-time to detect brute-force attempts and automatically ban offending IPs via firewall rules.
-* **Automated Reporting:** Calculates an overall compliance score percentage and exports detailed findings to a timestamped `audit_report_<timestamp>.json`.
+* **Evaluates Live Runtime SSH (`sshd -T`)**: Evaluates the active, merged OpenSSH configuration directly, correctly catching drop-in files (`/etc/ssh/sshd_config.d/*.conf`).
+* **CIS Benchmark Alignment**: Verifies kernel network stack parameters (`sysctl`), shadow file permissions (`/etc/shadow`), active host firewalls (`ufw` / `firewalld`), and audit logging (`auditd`).
+* **Rootless Podman Inspection**: Audits running containers for privileged execution (`--privileged`), root user execution (`UID 0`), host network bindings (`--net=host`), and sensitive host volume mounts.
+* **Systemd Journal Integration**: Streams auth logs dynamically via `journalctl -u sshd` with fallback to `/var/log/auth.log` or `/var/log/secure`.
+* **Security Drift Detection**: Compares historic JSON audit reports to instantly highlight new regressions or resolved findings.
 
 ---
 
-## 🚀 Quick Start
+## 🛠️ Repository Structure
 
-### 1. Clone the repository
+```text
+linux-security-auditor/
+├── audit.py              # Unified CLI wrapper entrypoint
+├── CHANGELOG.md          # Version history
+├── LICENSE               # MIT License
+├── README.md             # Project documentation
+├── VERSION               # Current release version (2.0.0)
+├── modules/              # Core security auditor package
+│   ├── __init__.py
+│   ├── container.py      # Podman container security inspector
+│   ├── diff.py           # JSON audit report drift analyzer
+│   ├── ssh.py            # SSH log & journalctl brute-force parser
+│   └── system.py         # OS & CIS compliance security scanner
+└── scripts/
+    └── bump_version.py   # Repository version & header sync tool
+```
+---
+
+## Prerequisites
+
+* **OS**: Linux (Debian, Ubuntu, RHEL, Fedora, Rocky Linux, AlmaLinux)
+* **Python**: Python 3.8+ (**Standard library only** — no `pip install` required!)
+* **Privileges**: Root / `sudo` access (required for `/etc/shadow`, `sshd -T`, and systemd checks)
+* **Optional**: Podman (for container security inspection via `audit.py container`)
+
+---
+
+## 🚀 Quick Start & Usage
+
+**Clone the Repository & Make the CLI Wrapper Executable:**
 ```bash
 git clone https://github.com/SudoShea/linux-security-auditor.git
 cd linux-security-auditor
+chmod +x audit.py
 ```
-### 2. Make scripts executable
+### 1. System CIS Compliance Audit
+Evaluates SSH, active firewalls, unencrypted listening ports, kernel `sysctl` rules, `/etc/shadow` permissions, and `auditd`:
 ```bash
-chmod +x auditor.py ssh_sentinel.py
+sudo ./audit.py system
 ```
-### 3. Run System Security Audit
-Execute a non-destructive compliance scan:
+### 2. Container Security Audit
+Inspects active Podman containers for high-risk flags and sensitive volume mounts:
 ```bash
-sudo ./auditor.py
+./audit.py container
 ```
-### 4. Run SSH Sentinel (Real-Time Protection)
-Monitor auth logs for brute-force attacks and automatically apply firewall bans:
+### 3. SSH Anomaly & Brute-Force Scan
+Parses systemd auth logs for failed login attempts exceeding a threshold:
 ```bash
-# Run interactive sentinel monitoring
-sudo ./ssh_sentinel.py
-
-# Run with custom failure threshold (e.g., ban after 3 failed attempts)
-sudo ./ssh_sentinel.py --max-retries 3
+sudo ./audit.py ssh -t 3 --since "12 hours ago"
 ```
-
+### 4. Security Drift Analysis
+Compares two JSON audit reports generated by `system` audits to detect regressions:
+```bash
+./audit.py diff audit_report_baseline.json audit_report_target.json
+```
+### 5. Full Security Suite Execution
+Runs OS compliance, container risk, and SSH log audits sequentially in a single pass:
+```bash
+sudo ./audit.py all
+```
 ---
 
-## 📊 Example Outputs
-### Compliance Audit JSON (audit_report_[timestamp].json)
+## Auditing Remote Systems
+
+`audit.py` evaluates the **local host** where it is executed. To audit remote servers across your infrastructure without installing the repository on every host, use one of the following methods:
+
+### Method A: Execute Remotely via SSH
+Stream and execute the audit suite directly on a target host over SSH without leaving files behind:
+```bash
+# Run full system audit on a remote host
+ssh -t user@remote-host "git clone https://github.com/SudoShea/linux-security-auditor.git /tmp/auditor && sudo /tmp/auditor/audit.py system && rm -rf /tmp/auditor"
+```
+### Method B: Dispatch via Ansible Ad-Hoc Command
+If you maintain an Ansible inventory (e.g., in `ansible-system-hardening` or `homelab-infrastructure`), dispatch `audit.py` across all target hosts in a single command:
+```bash
+# Run audit.py across all hosts in your inventory
+ansible all -i inventory.ini -m script -a "audit.py system" --become
+```
+---
+
+## 📊 JSON Report Export
+
+Executing `./audit.py` system automatically generates a timestamped JSON report (`audit_report_YYYYMMDD_HHMMSS.json`) formatted for automated compliance tracking and drift analysis:
 ```json
 {
-    "timestamp": "2026-07-23T17:15:00.123456",
+    "timestamp": "2026-07-27T17:40:00.000000",
     "summary": {
-        "total_checks": 6,
-        "passed": 5,
-        "failed": 1,
-        "score_percentage": 83.3
+        "total_checks": 12,
+        "passed": 12,
+        "failed": 0,
+        "score_percentage": 100.0
     },
     "results": [
         {
             "category": "SSH",
-            "check": "Directive: PermitRootLogin",
+            "check": "Directive: permitrootlogin",
             "status": "PASS",
-            "details": "Configured as 'no'."
+            "details": "Evaluated runtime as 'no'"
         }
     ]
 }
-```
-### SSH Log Sentinel Alert Output
-```text
-[*] Analyzing /var/log/secure (Threshold: >= 5 failed attempts)...
-
-[+] Scan Complete: 1 suspicious IP(s) detected.
-============================================================
-🚨 [ALERT] Suspicious IP: 192.168.1.100
-   ├─ Failed Attempts : 12
-   ├─ Targeted Users  : root, admin, user1
-   ├─ Time Range      : Jul 23 21:00:01 -> Jul 23 21:05:30
-   └─ Invalid Users   : admin
 ```
 ---
 
